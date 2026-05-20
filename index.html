@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>英雄崛起 — 間諜家家酒數學闖關</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;background:linear-gradient(135deg,#eef1fb 0%,#f7eef5 100%);min-height:100vh;padding:20px;color:#2c2c2a}
+.wrap{max-width:640px;margin:0 auto}
+.card{background:#fff;border-radius:14px;padding:22px;margin-bottom:16px;box-shadow:0 2px 12px rgba(83,74,183,0.08)}
+.row{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;flex-shrink:0}
+.name{font-weight:700;font-size:15px;margin:0}
+.role{font-size:12px;color:#5f5e5a;margin:0}
+.story{font-size:15px;line-height:1.8;margin:0}
+.q{font-size:16px;font-weight:700;margin:18px 0 12px;color:#534ab7}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:12px 0}
+.opt{background:#f8f8f5;border:1.5px solid #e5e3dc;border-radius:10px;padding:15px 16px;text-align:left;cursor:pointer;font-size:15px;font-family:inherit;color:#2c2c2a;transition:all .15s}
+.opt:hover:not(:disabled){border-color:#7f77dd;background:#eeedfe}
+.opt:disabled{cursor:not-allowed}
+.opt.right{background:#e1f5ee;border-color:#1d9e75;color:#085041}
+.opt.wrong{background:#fcebeb;border-color:#a32d2d;color:#791f1f}
+.feedback{border-radius:10px;padding:15px 17px;margin:14px 0;font-size:15px;line-height:1.8}
+.fb-ok{background:#e1f5ee;color:#085041}
+.fb-no{background:#faeeda;color:#633806}
+.btn{background:#534ab7;color:#fff;border:none;padding:12px 26px;border-radius:10px;cursor:pointer;font-weight:700;font-size:15px;font-family:inherit}
+.btn:hover{background:#3c3489}
+.top{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#fff;border-radius:10px;margin-bottom:16px;font-size:14px;box-shadow:0 2px 8px rgba(83,74,183,0.06)}
+.pills{display:flex;gap:6px}
+.pill{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:#f1efe8;border:1.5px solid #e5e3dc;color:#888780}
+.pill.done{background:#1d9e75;color:#fff;border-color:#1d9e75}
+.pill.now{background:#534ab7;color:#fff;border-color:#534ab7}
+.pill.boss{background:#d85a30;color:#fff;border-color:#d85a30}
+.tag{background:#7f77dd;color:#fff;padding:5px 12px;border-radius:8px;font-size:13px;font-weight:700}
+.tag.boss{background:#d85a30}
+.ttl{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.ttl h3{margin:0;font-size:17px;font-weight:700}
+.hero{text-align:center;padding:28px 18px;background:#fff;border-radius:14px;margin-bottom:16px;box-shadow:0 2px 12px rgba(83,74,183,0.08)}
+.hero h2{font-size:30px;font-weight:800;color:#534ab7;margin:0 0 6px}
+.hero p{font-size:15px;color:#5f5e5a;line-height:1.8;margin:8px 0}
+.rank-score{font-size:60px;font-weight:800;color:#534ab7;line-height:1}
+.rank-title{font-size:24px;font-weight:800;margin:8px 0}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:18px 0}
+.stat{background:#f8f8f5;padding:12px 6px;border-radius:10px;text-align:center;font-size:12px;border:1.5px solid #e5e3dc}
+.stat .n{font-size:22px;font-weight:800;display:block;color:#534ab7;margin-bottom:3px}
+.stat .l{color:#5f5e5a}
+.hint{background:#eeedfe;color:#3c3489;border-radius:10px;padding:13px 16px;font-size:14px;margin:14px 0;line-height:1.75}
+.hint b{color:#26215c}
+.actions{display:flex;gap:11px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+.intro-box{display:grid;grid-template-columns:1fr 1fr;gap:9px;max-width:420px;margin:0 auto 20px;font-size:13px;text-align:left}
+.intro-box>div{background:#f8f8f5;padding:10px 14px;border-radius:10px;border:1.5px solid #e5e3dc}
+.emoji{font-size:38px;margin-bottom:6px}
+@media(max-width:520px){.options{grid-template-columns:1fr}.stats{grid-template-columns:repeat(5,1fr);font-size:11px}.stat .n{font-size:18px}}
+</style>
+</head>
+<body>
+<div class="wrap"><div id="game"></div></div>
+
+<script>
+(function(){
+const state={step:'intro',level:0,score:0,results:[null,null,null,null,null],attempt:'first'};
+
+const chars={
+  anya:{name:'安妮亞',role:'心電感應特工',bg:'#f4c0d1',color:'#72243e',ini:'安',emoji:'🧠'},
+  loid:{name:'黃昏 / 洛伊德',role:'WISE 王牌間諜',bg:'#b5d4f4',color:'#0c447c',ini:'黃',emoji:'🕵️'},
+  yor:{name:'約兒',role:'荊棘公主',bg:'#f0997b',color:'#712b13',ini:'約',emoji:'🌹'},
+  bond:{name:'邦德',role:'預知未來的犬',bg:'#fac775',color:'#633806',ini:'邦',emoji:'🐕'},
+  desmond:{name:'多諾凡·戴斯蒙德',role:'最終魔王',bg:'#5f5e5a',color:'#fff',ini:'魔',emoji:'😈'}
+};
+
+const levels=[
+  {
+    n:1,title:'第一關:追蹤行動',char:chars.anya,
+    story:'黃昏接到緊急任務! 逃犯帶著機密資料逃跑了。安妮亞偷偷用心電感應追蹤到 — 逃犯跑了 <b>300 公尺</b>,共花了 <b>60 秒鐘</b>。',
+    question:'這名逃犯平均每秒跑多少公尺?',
+    options:['3 公尺','5 公尺','6 公尺','18000 公尺'],correctIndex:1,
+    explanation:'<b>速度 = 距離 ÷ 時間</b>。<br>把 300 公尺平均分給 60 秒,每 1 秒分到 300 ÷ 60 = <b>5 公尺</b>,所以逃犯的秒速是 5 公尺。',
+    retryStory:'前方又出現一名逃犯! 安妮亞觀察到他跑了 <b>200 公尺</b>,共花了 <b>40 秒</b>。',
+    retryQuestion:'這名逃犯平均每秒跑多少公尺?',
+    retryOptions:['4 公尺','5 公尺','8 公尺','0.2 公尺'],retryCorrect:1,
+    retryExplain:'200 ÷ 40 = <b>5</b>,所以秒速 5 公尺。'
+  },
+  {
+    n:2,title:'第二關:高速追擊',char:chars.loid,
+    story:'黃昏開著間諜車緊追逃犯,目前 <b>時速 72 公里</b>。為了讓總部精準定位,他需要換算成 <b>分速</b>(每分鐘行駛多少公里)。',
+    question:'時速 72 公里 = 分速多少公里?',
+    options:['0.8 公里','1.2 公里','12 公里','4320 公里'],correctIndex:1,
+    explanation:'<b>1 小時 = 60 分鐘</b>,所以時速可以記成「72 公里 : 1 小時 = 72 公里 : 60 分鐘」。<br>把 72 公里平均分給 60 分鐘,每 1 分鐘是 72 ÷ 60 = <b>1.2 公里</b>。',
+    retryStory:'黃昏減速到 <b>時速 60 公里</b>,以便和暗線匯合。',
+    retryQuestion:'時速 60 公里 = 分速多少公里?',
+    retryOptions:['1 公里','10 公里','6 公里','0.6 公里'],retryCorrect:0,
+    retryExplain:'60 ÷ 60 = <b>1</b>,所以分速是 1 公里。'
+  },
+  {
+    n:3,title:'第三關:花生分配',char:chars.yor,
+    story:'約兒幫安妮亞準備愛吃的花生! 安妮亞有 <b>120 顆花生</b>,洛伊德的花生數量是安妮亞的 <b>3/4 倍</b>。',
+    question:'洛伊德有多少顆花生?',
+    options:['90 顆','160 顆','30 顆','40 顆'],correctIndex:0,
+    explanation:'安妮亞是<b>基準量(1 倍)</b>,洛伊德是<b>比較量</b>。<br>比較量 = 基準量 × 倍數 = 120 × 3/4 = <b>90 顆</b>。<br>也可以這樣想:把安妮亞 120 顆平分成 4 份,每份 30 顆,洛伊德有 3 份 = 90 顆。',
+    retryStory:'約兒自己有 <b>80 顆花生</b>,邦德的花生是約兒的 <b>2/5 倍</b>。',
+    retryQuestion:'邦德有多少顆花生?',
+    retryOptions:['32 顆','40 顆','200 顆','16 顆'],retryCorrect:0,
+    retryExplain:'80 × 2/5 = <b>32 顆</b>。把 80 平分成 5 份,每份 16 顆,2 份就是 32 顆。'
+  },
+  {
+    n:4,title:'第四關:後院謎團',char:chars.bond,
+    story:'邦德在福傑家後院聞到可疑氣味,發現一群雞和兔子!<br>牠數出共有 <b>10 隻動物</b>,腳一共有 <b>28 隻</b>。',
+    question:'雞和兔子各有幾隻?',
+    options:['雞 6 隻、兔 4 隻','雞 4 隻、兔 6 隻','雞 5 隻、兔 5 隻','雞 8 隻、兔 2 隻'],correctIndex:0,
+    explanation:'<b>先假設都是雞</b>:10 × 2 = 20 隻腳,但實際有 28 隻腳,多出 28 - 20 = <b>8 隻腳</b>。<br>每把一隻雞換成兔子會多 (4 - 2) = 2 隻腳,所以需要換 8 ÷ 2 = <b>4 隻兔</b>。<br>雞 = 10 - 4 = <b>6 隻</b>,兔 = <b>4 隻</b>。',
+    retryStory:'第二天邦德又看到一群雞兔! 共 <b>12 隻</b>,共 <b>32 隻腳</b>。',
+    retryQuestion:'這次雞和兔各幾隻?',
+    retryOptions:['雞 8 隻、兔 4 隻','雞 4 隻、兔 8 隻','雞 6 隻、兔 6 隻','雞 10 隻、兔 2 隻'],retryCorrect:0,
+    retryExplain:'假設都是雞:12×2=24,差 32-24=8,8÷(4-2)=<b>4 隻兔</b>,12-4=<b>8 隻雞</b>。'
+  },
+  {
+    n:5,title:'魔王挑戰:多諾凡的金庫',char:chars.desmond,isBoss:true,
+    story:'黃昏終於潛入多諾凡的秘密金庫! 金庫裡有 <b>10 元金幣</b>和 <b>50 元金幣</b>共 <b>30 枚</b>,總價值 <b>700 元</b>。<br>必須立刻算出兩種金幣各有幾枚,才能順利取走 50 元金幣!',
+    question:'10 元金幣和 50 元金幣各有幾枚?',
+    options:['10 元 20 枚、50 元 10 枚','10 元 10 枚、50 元 20 枚','10 元 15 枚、50 元 15 枚','10 元 5 枚、50 元 25 枚'],correctIndex:0,
+    explanation:'這是「雞兔問題」的變形! 把<b>便宜的 10 元當作雞、貴的 50 元當作兔</b>。<br>假設都是 10 元:30 × 10 = 300 元,差 700 - 300 = <b>400 元</b>。<br>每換一枚 50 元就多 (50 - 10) = 40 元,所以 400 ÷ 40 = <b>10 枚 50 元金幣</b>。<br>10 元 = 30 - 10 = <b>20 枚</b>。',
+    retryStory:'最後一道防線! 抽屜裡有 <b>5 元</b>和 <b>20 元</b>硬幣共 <b>12 枚</b>,總值 <b>105 元</b>。',
+    retryQuestion:'5 元和 20 元各幾枚?',
+    retryOptions:['5 元 9 枚、20 元 3 枚','5 元 3 枚、20 元 9 枚','5 元 6 枚、20 元 6 枚','5 元 7 枚、20 元 5 枚'],retryCorrect:0,
+    retryExplain:'假設全是 5 元:12×5=60,差 105-60=45。45÷(20-5)=<b>3 枚 20 元</b>,12-3=<b>9 枚 5 元</b>。'
+  }
+];
+
+function rank(s){
+  if(s>=90)return{title:'傳奇間諜',sub:'你就是 WISE 的最強王牌! 黃昏也要向你致敬。',emoji:'👑',color:'#534ab7'};
+  if(s>=70)return{title:'王牌間諜',sub:'任務完成度極高! 距離傳奇只差一步。',emoji:'🏅',color:'#1d9e75'};
+  if(s>=50)return{title:'優秀間諜',sub:'已具備獨立執行任務的能力,繼續努力!',emoji:'⭐',color:'#ba7517'};
+  if(s>=30)return{title:'見習間諜',sub:'通過了基礎訓練,還需要更多實戰經驗。',emoji:'🎓',color:'#d85a30'};
+  return{title:'訓練中的學員',sub:'再翻翻教材,你一定可以變強的!',emoji:'📖',color:'#888780'};
+}
+
+function topbar(){
+  const pills=[1,2,3,4,5].map(i=>{
+    let cls='pill';
+    if(state.results[i-1])cls+=' done';
+    else if(state.level===i)cls+=(i===5?' boss':' now');
+    return '<div class="'+cls+'">'+(i===5?'王':i)+'</div>';
+  }).join('');
+  return '<div class="top"><div><b>英雄崛起</b> · 累計分數 <b style="color:#534ab7;font-size:16px">'+state.score+'</b></div><div class="pills">'+pills+'</div></div>';
+}
+
+function avatar(c){return '<div class="avatar" style="background:'+c.bg+';color:'+c.color+'">'+c.ini+'</div>';}
+
+function renderIntro(){
+  return '<div class="hero"><div class="emoji">🕵️</div><h2>英雄崛起</h2>'+
+    '<p style="font-size:14px;color:#888;margin-bottom:18px">— 間諜家家酒 × 數學特訓 —</p>'+
+    '<p style="text-align:left;max-width:480px;margin:0 auto 18px">歡迎加入 <b>WISE 西方諜報局</b>!<br>你是新進的見習特務,必須通過 <b>5 道任務</b>才能成為合格間諜。任務涵蓋速度追蹤、單位換算、資源分配、雞兔謎題,最終還要對抗魔王 <b>多諾凡·戴斯蒙德</b>!</p>'+
+    '<div class="intro-box"><div><b style="color:#1d9e75">第一次就答對</b><br><span style="color:#5f5e5a">獲得 20 分</span></div>'+
+    '<div><b style="color:#ba7517">看詳解後再答對</b><br><span style="color:#5f5e5a">獲得 10 分</span></div></div>'+
+    '<button class="btn" onclick="window._start()">▶ 開始任務</button></div>';
+}
+
+function renderLevel(){
+  const L=levels[state.level-1];
+  const isRetry=state.attempt==='retry';
+  const story=isRetry?L.retryStory:L.story;
+  const q=isRetry?L.retryQuestion:L.question;
+  const opts=isRetry?L.retryOptions:L.options;
+  const optBtns=opts.map((o,i)=>'<button class="opt" onclick="window._ans('+i+')">'+String.fromCharCode(65+i)+'. '+o+'</button>').join('');
+  return topbar()+
+    '<div class="ttl"><span class="tag'+(L.isBoss?' boss':'')+'">'+(L.isBoss?'魔王戰':'第 '+L.n+' 關')+'</span><h3>'+L.title+(isRetry?' · 類題挑戰':'')+'</h3></div>'+
+    '<div class="card"><div class="row">'+avatar(L.char)+'<div><p class="name">'+L.char.name+'</p><p class="role">'+L.char.role+'</p></div></div>'+
+    '<p class="story">'+story+'</p><p class="q">🎯 '+q+'</p>'+
+    '<div class="options" id="opts">'+optBtns+'</div><div id="fb"></div></div>';
+}
+
+function renderEnd(){
+  const r=rank(state.score);
+  const stats=levels.map((L,i)=>{
+    const res=state.results[i];const pts=res?res.points:0;
+    const ico=pts===20?'✓':pts===10?'◐':'✗';
+    const col=pts===20?'#1d9e75':pts===10?'#ba7517':'#a32d2d';
+    return '<div class="stat"><span class="n" style="color:'+col+'">'+pts+'</span><span class="l">第 '+L.n+' 關<br><span style="color:'+col+'">'+ico+'</span></span></div>';
+  }).join('');
+  return '<div class="hero"><div class="emoji">'+r.emoji+'</div>'+
+    '<div class="rank-score">'+state.score+'</div><div style="font-size:13px;color:#888">/ 100 分</div>'+
+    '<div class="rank-title" style="color:'+r.color+'">'+r.title+'</div><p>'+r.sub+'</p>'+
+    '<div class="stats">'+stats+'</div>'+
+    '<button class="btn" onclick="window._reset()">🔄 再挑戰一次</button></div>'+
+    '<div class="hint"><b>💡 任務總結</b><br>本次任務涵蓋:認識速度、速度單位化聚、基準量與比較量、雞兔問題。這些都是六年級數學的核心概念,熟練後可以處理生活中各種比例與分配問題!</div>';
+}
+
+function render(){
+  const el=document.getElementById('game');
+  if(state.step==='intro')el.innerHTML=renderIntro();
+  else if(state.step==='level')el.innerHTML=renderLevel();
+  else if(state.step==='end')el.innerHTML=renderEnd();
+}
+
+window._start=function(){state.step='level';state.level=1;state.attempt='first';render();};
+window._reset=function(){state.step='intro';state.level=0;state.score=0;state.results=[null,null,null,null,null];state.attempt='first';render();};
+
+window._ans=function(i){
+  const L=levels[state.level-1];
+  const isRetry=state.attempt==='retry';
+  const correct=isRetry?L.retryCorrect:L.correctIndex;
+  const ok=i===correct;
+  document.querySelectorAll('#opts .opt').forEach((b,idx)=>{
+    b.disabled=true;
+    if(idx===correct)b.classList.add('right');
+    else if(idx===i&&!ok)b.classList.add('wrong');
+  });
+  const fb=document.getElementById('fb');
+  if(ok){
+    const pts=isRetry?10:20;state.score+=pts;
+    state.results[state.level-1]={points:pts,firstTry:!isRetry};
+    fb.innerHTML='<div class="feedback fb-ok"><b>✓ 任務成功! 獲得 '+pts+' 分</b><br>'+(isRetry?L.retryExplain:L.explanation)+'</div>'+
+      '<div class="actions"><button class="btn" onclick="window._next()">'+(state.level===5?'前往任務總部 ›':'進入下一關 ›')+'</button></div>';
+  }else{
+    if(isRetry){
+      state.score+=5;state.results[state.level-1]={points:5,firstTry:false};
+      fb.innerHTML='<div class="feedback fb-no"><b>✗ 還是答錯了,獲得 5 分鼓勵分</b><br>'+L.retryExplain+'<br>沒關係! 回去再翻翻教材就會了。</div>'+
+        '<div class="actions"><button class="btn" onclick="window._next()">'+(state.level===5?'前往任務總部 ›':'進入下一關 ›')+'</button></div>';
+    }else{
+      fb.innerHTML='<div class="feedback fb-no"><b>💡 答錯了,看看詳細解答</b><br>'+L.explanation+'</div>'+
+        '<div class="actions"><button class="btn" onclick="window._retry()">🔄 挑戰類題</button></div>';
+    }
+  }
+};
+
+window._retry=function(){state.attempt='retry';render();};
+window._next=function(){
+  if(state.level>=5){state.step='end';render();return;}
+  state.level++;state.attempt='first';render();
+};
+
+render();
+})();
+</script>
+</body>
+</html>
